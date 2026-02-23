@@ -11,7 +11,7 @@ description: >
 
 Three strictly ordered phases. Never skip ahead. Never write code before the plan is approved.
 
-All workflow artifacts are stored in the `.boristane/` directory at the project root to avoid conflicts with project files.
+All workflow artifacts are stored in the `.boristane/` directory at the project root to avoid conflicts with project files. Completed sessions are archived into timestamped subdirectories (e.g., `.boristane/action-260223-1004/`).
 
 ---
 
@@ -20,7 +20,8 @@ All workflow artifacts are stored in the `.boristane/` directory at the project 
 **Run this at the start of every session.**
 
 1. If `.boristane/` does not exist → create it and `.boristane/status.md` using the template below, then start Phase 1.
-2. If it exists → read `.boristane/status.md`, check **Current phase**, and resume from there.
+2. If `.boristane/status.md` exists and all items are marked `[x]` → the previous session is complete. Archive it (see "Archiving" below), then create a fresh `status.md` and start Phase 1 for the new task.
+3. If `.boristane/status.md` exists with incomplete items → read it, check **Current phase**, and resume from there.
 
 Phases advance strictly in order: **Research → Planning → Implementation**
 
@@ -207,3 +208,16 @@ When implementation drifts in the wrong direction, do not try to patch it. Rever
 - [ ] Final typecheck passes with zero errors
 - [ ] Available tests run and results reported
 - [ ] No debug logs, commented-out code, or placeholder TODOs left behind
+- [ ] Archive completed (see "Archiving" below)
+
+---
+
+## Archiving
+
+When all items in `status.md` are marked `[x]`, archive the session:
+
+1. Create a subdirectory named `action-YYMMDD-HHMM` inside `.boristane/` using the current date and time (e.g., `action-260223-1004`).
+2. Move `status.md`, `plan.md`, and `research.md` into that subdirectory.
+3. The `.boristane/` root is now clean and ready for the next session.
+
+This is always the **last** step of Phase 3. Do not archive mid-session or before all checklist items are complete.
