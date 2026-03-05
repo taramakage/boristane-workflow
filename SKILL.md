@@ -11,7 +11,7 @@ description: >
 
 Three strictly ordered phases. Never skip ahead. Never write code before the plan is approved.
 
-All workflow artifacts are stored in the `.boristane/` directory at the project root to avoid conflicts with project files. Completed sessions are archived into timestamped subdirectories (e.g., `.boristane/action-260223-1004/`).
+All workflow artifacts are stored in the `.boristane/<short-summary-title>/` directory at the project root to avoid conflicts with project files. Completed sessions are archived into timestamped subdirectories (e.g., `.boristane/action-260223-1004/`).
 
 ---
 
