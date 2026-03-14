@@ -11,7 +11,12 @@ description: >
 
 Three strictly ordered phases. Never skip ahead. Never write code before the plan is approved.
 
-All workflow artifacts are stored in the `.boristane/<short-summary-title>/` directory at the project root to avoid conflicts with project files. Completed sessions are archived into timestamped subdirectories (e.g., `.boristane/action-260223-1004/`).
+All workflow artifacts are stored in a **session directory** at the project root under `.boristane/`. Two naming conventions keep active and archived sessions visually distinct:
+
+- **Active session**: `.boristane/wip-<task-slug>/` — created at session start, lives here until archiving (e.g., `.boristane/wip-add-auth-middleware/`, `.boristane/wip-fix-login-bug/`).
+- **Archived session**: `.boristane/action-YYMMDD-HHMM/` — created at session end (e.g., `.boristane/action-260314-1530/`).
+
+Multiple `wip-*` directories can coexist, allowing parallel sessions without conflicts.
 
 ---
 
@@ -19,15 +24,17 @@ All workflow artifacts are stored in the `.boristane/<short-summary-title>/` dir
 
 **Run this at the start of every session.**
 
-1. If `.boristane/` does not exist → create it and `.boristane/status.md` using the template below, then start Phase 1.
-2. If `.boristane/status.md` exists and all items are marked `[x]` → the previous session is complete. Archive it (see "Archiving" below), then create a fresh `status.md` and start Phase 1 for the new task.
-3. If `.boristane/status.md` exists with incomplete items → read it, check **Current phase**, and resume from there.
+1. Derive `<task-slug>` from the task description (short, kebab-case). Set `SESSION_DIR = .boristane/wip-<task-slug>/`. Example: task "add auth middleware" → `SESSION_DIR = .boristane/wip-add-auth-middleware/`.
+2. If `SESSION_DIR` does not exist → create it and `SESSION_DIR/status.md` using the template below, then start Phase 1.
+3. If `SESSION_DIR` exists but `SESSION_DIR/status.md` does not → treat as case 2.
+4. If `SESSION_DIR/status.md` exists and all items are marked `[x]` → archive it (see "Archiving" below), then start Phase 1 fresh in the same or a new `SESSION_DIR`.
+5. If `SESSION_DIR/status.md` exists with incomplete items → read it, check **Current phase**, and resume from there.
 
 Phases advance strictly in order: **Research → Planning → Implementation**
 
-`.boristane/status.md` is the single source of truth for session state. After every phase transition or completed step, update it and set `**Last updated**`.
+`SESSION_DIR/status.md` is the single source of truth for session state. After every phase transition or completed step, update it and set `**Last updated**`.
 
-### `.boristane/status.md` template
+### `SESSION_DIR/status.md` template
 
 ```markdown
 # Workflow Status
@@ -46,8 +53,9 @@ Phases advance strictly in order: **Research → Planning → Implementation**
 
 ## Phase 3: Implementation
 - [ ] All To-Do items completed
-- [ ] Final typecheck passes
-- [ ] Tests run and results reported
+- [ ] Final build/typecheck passes
+- [ ] Tests run and results reported (failures resolved or accepted by developer)
+- [ ] Docs updated or doc conflicts reported to developer
 ```
 
 Mark items `[x]` as they are completed. Update `**Current phase**` and `**Last updated**` on every change.
@@ -61,14 +69,14 @@ Mark items `[x]` as they are completed. Update `**Current phase**` and `**Last u
 ### Steps
 
 1. Identify scope with the developer if not already stated.
-2. Read all relevant files thoroughly — patterns, conventions, dependencies, edge cases, types.
-3. Write findings to `.boristane/research.md` using this structure:
+2. Read all relevant files thoroughly — patterns, conventions, dependencies, edge cases, types. Also read any project documentation (README, ADRs, inline docs, changelogs) that touches the scope. Note where docs conflict with or lag behind the actual code — do not silently trust stale docs.
+3. Write findings to `SESSION_DIR/research.md` (e.g., `.boristane/wip-add-auth-middleware/research.md`) using this structure:
 
 ```markdown
 # Research: [Feature/Task Name]
 
 ## Key files
-- `path/to/file.ts` — responsibility, notable code paths
+- `path/to/file` — responsibility, notable code paths
 
 ## Patterns and conventions
 - Naming, error handling, module structure, data shapes
@@ -81,6 +89,9 @@ Mark items `[x]` as they are completed. Update `**Current phase**` and `**Last u
 
 ## Gotchas
 - TODOs, commented-out code, surprising behavior, known tech debt
+
+## Doc conflicts
+- Docs that contradict the current code or appear outdated (list file, discrepancy, and which source is authoritative)
 
 ## Open questions
 - Ambiguities needing developer clarification before planning
@@ -96,7 +107,7 @@ Mark items `[x]` as they are completed. Update `**Current phase**` and `**Last u
 
 ### Completion condition
 
-`.boristane/research.md` gives a developer enough context to understand the system without reading the code themselves.
+`SESSION_DIR/research.md` gives a developer enough context to understand the system without reading the code themselves.
 
 ---
 
@@ -104,11 +115,15 @@ Mark items `[x]` as they are completed. Update `**Current phase**` and `**Last u
 
 **Goal**: Produce an approved written plan. Write no code.
 
-**Requires**: `.boristane/research.md` reviewed by the developer.
+**Requires**: `SESSION_DIR/research.md` reviewed by the developer.
+
+### Reference implementations
+
+If a good implementation exists — in an open-source project, another service in the repo, or elsewhere — share it alongside the plan request. Working from a concrete reference produces better results than designing from scratch. When a reference is provided, cite it in the plan's `## Approach` section and note any adaptations made.
 
 ### Writing `plan.md`
 
-Write `.boristane/plan.md` using this structure:
+Write `SESSION_DIR/plan.md` using this structure:
 
 ```markdown
 # Plan: [Feature/Task Name]
@@ -128,22 +143,20 @@ Alternatives considered and why each was rejected or deprioritized.
 Decisions the developer must make before implementation begins.
 ```
 
-**Reference implementation trick**: When a good implementation exists in another codebase, share that code alongside the plan request. Working from a concrete reference produces dramatically better results than designing from scratch.
-
 ### Annotation cycle
 
-Tell the developer: ".boristane/plan.md is ready. Please annotate it and ask me to address your notes."
+Tell the developer: "`SESSION_DIR/plan.md` is ready. Please annotate it and ask me to address your notes."
 
-**When the developer adds notes to `.boristane/plan.md`:**
+**When the developer adds notes to `SESSION_DIR/plan.md`:**
 
 1. Read the entire updated file — do not skim.
 2. Address every annotation — correct assumptions, adopt their approach, incorporate domain knowledge.
 3. Do not silently preserve a rejected approach.
-4. Update `.boristane/plan.md` in place — do not create versioned copies.
+4. Update `SESSION_DIR/plan.md` in place — do not create versioned copies.
 5. Say: "All notes addressed. Please review again."
 6. Repeat until the developer approves (typically 1–6 cycles).
 
-**Diagnostic branch**: If annotations are corrections of factual errors (not preference choices), the research phase was insufficient. Offer to deepen `.boristane/research.md` before continuing the annotation cycle.
+**Diagnostic branch**: If annotations are corrections of factual errors (not preference choices), the research phase was insufficient. Offer to deepen `SESSION_DIR/research.md` before continuing the annotation cycle.
 
 #### Annotation examples
 
@@ -157,7 +170,9 @@ Annotations vary from two words to full paragraphs:
 
 ### Finalizing
 
-On approval, prepend a `## To-Do` checklist to `.boristane/plan.md`:
+Before finalizing, verify all `## Open questions` items are resolved. If any remain, ask the developer to decide before proceeding.
+
+On approval, prepend a `## To-Do` checklist to `SESSION_DIR/plan.md`:
 
 ```markdown
 ## To-Do
@@ -175,17 +190,17 @@ Say: "Plan finalized. Ready to implement on your go."
 
 **Goal**: Execute the approved plan completely. This phase is mechanical, not creative — all decisions were made in Phase 2.
 
-**Requires**: `.boristane/plan.md` with approved `## To-Do` checklist.
+**Requires**: `SESSION_DIR/plan.md` with approved `## To-Do` checklist.
 
 **Freedom level: Low.** Follow the plan exactly. Do not improvise.
 
 ### Execution rules
 
 - Work through the checklist top to bottom.
-- Mark each item `[x]` in `.boristane/plan.md` immediately after completing it.
-- After every meaningful change, run the project's typecheck command and fix errors before moving on. This is a feedback loop — never defer typecheck to the end.
-- Never use `any` types or equivalent escape hatches.
-- Match existing code patterns — consult `.boristane/research.md` and the codebase.
+- Mark each item `[x]` in `SESSION_DIR/plan.md` immediately after completing it.
+- After every meaningful change, run the project's build/typecheck/lint command and fix errors before moving on. This is a feedback loop — never defer checks to the end.
+- Avoid type escape hatches (e.g. `any`, unsafe casts) — use the language's type system properly.
+- Match existing code patterns — consult `SESSION_DIR/research.md` and the codebase.
 - Keep responses terse: one sentence saying what was done and what's next.
 
 ### When to stop and ask
@@ -194,7 +209,7 @@ Stop immediately if:
 
 - A step in the plan is ambiguous and two interpretations would produce meaningfully different code.
 - An unexpected state in the codebase makes a planned step impossible as written.
-- A typecheck error requires a structural change not anticipated in the plan.
+- A build or typecheck error requires a structural change not anticipated in the plan.
 
 Do NOT stop for normal progress. The developer approved the plan — execute it.
 
@@ -204,10 +219,11 @@ When implementation drifts in the wrong direction, do not try to patch it. Rever
 
 ### Completion checklist
 
-- [ ] All `.boristane/plan.md` to-do items marked `[x]`
-- [ ] Final typecheck passes with zero errors
-- [ ] Available tests run and results reported
+- [ ] All `SESSION_DIR/plan.md` to-do items marked `[x]`
+- [ ] Final build/typecheck passes with zero errors
+- [ ] Available tests run; failures resolved or accepted by developer with justification
 - [ ] No debug logs, commented-out code, or placeholder TODOs left behind
+- [ ] Docs updated to reflect changes (README, ADRs, inline docs); any doc conflicts flagged in research.md resolved or reported to developer
 - [ ] Archive completed (see "Archiving" below)
 
 ---
@@ -216,8 +232,9 @@ When implementation drifts in the wrong direction, do not try to patch it. Rever
 
 When all items in `status.md` are marked `[x]`, archive the session:
 
-1. Create a subdirectory named `action-YYMMDD-HHMM` inside `.boristane/` using the current date and time (e.g., `action-260223-1004`).
-2. Move `status.md`, `plan.md`, and `research.md` into that subdirectory.
-3. The `.boristane/` root is now clean and ready for the next session.
+1. Rename `SESSION_DIR` (e.g., `.boristane/wip-add-auth-middleware/`) to a timestamped directory using the current date and time: `action-YYMMDD-HHMM` (YY=year, MM=month, DD=day, HH=hour, MM=minute). Example: `.boristane/action-260314-1530/`.
+2. The `.boristane/` root is now clean and ready for the next session.
+
+The `wip-` prefix marks active sessions; the `action-` prefix marks archived ones — they are always visually distinct at a glance.
 
 This is always the **last** step of Phase 3. Do not archive mid-session or before all checklist items are complete.
